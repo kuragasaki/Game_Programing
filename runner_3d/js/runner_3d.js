@@ -1,18 +1,18 @@
 // enchant.js本体やクラスをエクスポート
 enchant();
 
-var BACKGROUND_IMG = 'img/background2.png';
-var LEFT_TREE = 'img/left_tree.png';
-var RIGHT_TREE = 'img/right_tree.png';
-var LEFT_BUTTON = 'img/left_button.png';
-var RIGHT_BUTTON = 'img/right_button.png';
+var BACKGROUND_IMG = 'img/background.png';
 
 var BACKGROUND_TREES_IMG = 'img/background_trees.png';
 var TREE = 'img/tree.png';
 
+// キャラクター画像用変数
+var PLAYER_LIST = ['img/both_player.png', 'img/front_left_back_right_player.png', 'img/both_player.png', 'img/front_right_back_left_player.png'];
 
-// キャラクター画像用変数は、後々配列に変更する
-var CARACTOR = 'img/tmp_caractor.jpg';
+// ボタンイメージ
+var LEFT_BUTTON = 'img/left_button.png';
+var RIGHT_BUTTON = 'img/right_button.png';
+
 
 // 森林画像の横幅
 var TREE_WIDTH = 105;
@@ -28,10 +28,18 @@ window.onload = function() {
 	// ゲーム初期化処理
 
 	// fps(1秒間当たりの画面の描画回数)を設定する（省略時は「30」）
-	core.fps = 60;
+	/*
+	core.fps = 10; // 簡単
+	core.fps = 15; // 普通
+	core.fps = 20; // ちょっと早い
+	core.fps = 25; // 早い
+	core.fps = 35; // 結構早い
+	// あとは出現率(フレーム判定)を変更できるようにする
+	*/
+	core.fps = 15;
 
 	// ゲームで使用する画像ファイルを指定する
-	core.preload(BACKGROUND_IMG, LEFT_TREE, RIGHT_TREE, LEFT_BUTTON, RIGHT_BUTTON, CARACTOR, BACKGROUND_TREES_IMG, TREE);
+	core.preload(BACKGROUND_IMG, LEFT_BUTTON, RIGHT_BUTTON, BACKGROUND_TREES_IMG, TREE, PLAYER_LIST[0], PLAYER_LIST[1], PLAYER_LIST[2], PLAYER_LIST[3]);
 
 	// ファイルのプリロードが完成した時に実行される関数
 	core.onload = function() {
@@ -41,32 +49,53 @@ window.onload = function() {
 		// 背景設定
 		var background = new Sprite(320, 320);
 		background.image = core.assets[BACKGROUND_IMG];
-		mainScene.addChild(background)
+		mainScene.addChild(background);
+
+		var group_forest = new Group();
+		mainScene.addChild(group_forest);
+
+		var group_tree = new Group();
+		mainScene.addChild(group_tree);
+		
+		mainScene.onenterframe = function(){
+			if (core.frame % 50 == 0) {
+				// 左の開始配置(外野)
+				var left_forest = new BgForest(-90, 80, true);
+
+				// 右の開始配置(外野)
+				var right_forest = new BgForest(125, 80, false);
+			
+
+				/*
+				mainScene.addChild(left_forest);
+				mainScene.addChild(right_forest);
+				game.rootScene.insertBefore(ins,game.rootScene.lastChild);
+
+				mainScene.insertBefore(left_forest, mainScene.firstChild);
+				mainScene.insertBefore(right_forest, mainScene.firstChild);
+				*/
+
+				group_forest.insertBefore(left_forest, group_forest.firstChild);
+				group_forest.insertBefore(right_forest, group_forest.firstChild);
+			}
+
+			if (core.frame % 20 == 0) {
+				var main_tree = new Tree(128, 40, Math.floor(Math.random() * Math.floor(5)));
+
+				//mainScene.insertBefore(main_tree, mainScene.firstChild);
+				group_tree.insertBefore(main_tree, group_tree.firstChild);
+			}
+		}
 
 		// 忍者生成予定
 		// 忍者をシーンに追加
 		var player = new Player(32, 32);
-		mainScene.addChild(player)
-
-		
-		mainScene.onenterframe = function(){
-			if (core.frame % 60 == 0) {
-				// 左の開始配置(外野)
-				left_forest = new BgForest(-90, 80, true);
-
-				// 右の開始配置(外野)
-				right_forest = new BgForest(125, 80, false);
-				mainScene.addChild(left_forest)
-				mainScene.addChild(right_forest)
-			}
-
-			if (core.frame % 80 == 0) {
-				mainScene.addChild(new Tree(128, 40, Math.floor(Math.random() * Math.floor(5))));
-			}
-		}
+		//mainScene.insertBefore(player, mainScene.lastChild);
+		mainScene.addChild(player);
 
 		// 左ボタン設定
 		var leftBt = new ButtonClass(10, 320 - 60, core.assets[LEFT_BUTTON]);
+		//mainScene.insertBefore(leftBt, mainScene.lastChild);
 		mainScene.addChild(leftBt);
 
 		leftBt.addEventListener(Event.TOUCH_END, function() {
@@ -78,7 +107,7 @@ window.onload = function() {
 		mainScene.addChild(rightBt);
 		rightBt.addEventListener(Event.TOUCH_END, function() {
 			player.x += 40;
-		});		
+		});
 	}
 
 	// ゲームスタート
@@ -90,10 +119,27 @@ var Player = enchant.Class.create(enchant.Sprite, {
 	initialize: function(x, y) {
 		enchant.Sprite.call(this, x, y);
 		this.x = (320 - 32) / 2;
-		this.y = 280;
-		this.image = core.assets[CARACTOR];
-		
+		this.y = 290;
+		this.imgIndex = 0;
+		this.scale(1.08, 1.1);
+		this.image = core.assets[PLAYER_LIST[this.imgIndex]];
+
 		this.addEventListener(Event.ENTER_FRAME, function() {
+			if (core.frame % 2 == 0){
+				if (this.imgIndex < 3){
+					this.imgIndex ++;
+				} else {
+					this.imgIndex = 0;
+				}
+
+				if (this.imgIndex % 2 == 0){
+					this.y = 290;
+				} else {
+					this.y = 289;
+				}
+
+				this.image = core.assets[PLAYER_LIST[this.imgIndex]];
+			}
 		});
 	}
 });
@@ -112,25 +158,16 @@ var Tree = enchant.Class.create(enchant.Sprite, {
 		var addX = 0;
 		var addY = 1;
 		this.addEventListener(Event.ENTER_FRAME, function() {
-			if (core.frame % 10 == 0){
+			if (core.frame % 5 == 0){
 				if (this.y > 180){
-					scaleX = 1;
-					scaleY = 1;
-					addY = 200;
-				/*
-				} else if (this.y <= 180 && this.y > 160){
-
-					this.y += 3;
-					scaleX = 1.2;
-					scaleY = 1.2;
-				*/
+					this.remove();
 				} else if (this.y <= 180 && this.y > 160){
 					if (position == 0){
 						addX = -4;
 					}
 
 					if (position == 1){
-						addX = -2;
+						addX = -1.6;
 					}
 
 					if (position == 2){
@@ -138,7 +175,7 @@ var Tree = enchant.Class.create(enchant.Sprite, {
 					}
 
 					if (position == 3){
-						addX = 2;
+						addX = 1.6;
 					}
 
 					if (position == 4){
@@ -155,7 +192,7 @@ var Tree = enchant.Class.create(enchant.Sprite, {
 					}
 
 					if (position == 1){
-						addX = -1.5;
+						addX = -1.3;
 					}
 
 					if (position == 2){
@@ -163,7 +200,7 @@ var Tree = enchant.Class.create(enchant.Sprite, {
 					}
 
 					if (position == 3){
-						addX = 1.5;
+						addX = 1.3;
 					}
 
 					if (position == 4){
@@ -180,7 +217,7 @@ var Tree = enchant.Class.create(enchant.Sprite, {
 					}
 
 					if (position == 1){
-						addX = -0.9;
+						addX = -0.7;
 					}
 
 					if (position == 2){
@@ -188,7 +225,7 @@ var Tree = enchant.Class.create(enchant.Sprite, {
 					}
 
 					if (position == 3){
-						addX = 0.9;
+						addX = 0.7;
 					}
 
 					if (position == 4){
@@ -276,11 +313,9 @@ var BgForest = enchant.Class.create(enchant.Sprite, {
 		this.y = y;
 		
 		this.addEventListener(Event.ENTER_FRAME, function() {
-			if (core.frame % 10 == 0){
+			if (core.frame % 5 == 0){
 				if (this.y > 200){
-					scaleX = 0;
-					scaleY = 0;
-					return;
+					this.remove();
 				} else if (this.y <= 200 && this.y > 190){
 					delete this;
 					if (leftRightLFlg){
