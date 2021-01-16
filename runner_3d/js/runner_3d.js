@@ -2,6 +2,8 @@
 enchant();
 
 var BACKGROUND_IMG = 'img/background.png';
+var START_IMG = 'img/start.png';
+var GAME_OVER_IMG = 'img/gameover.png';
 
 var BACKGROUND_TREES_IMG = 'img/background_trees.png';
 var TREE = 'img/tree.png';
@@ -19,6 +21,9 @@ var TREE_WIDTH = 105;
 // 森林画像の縦幅
 var TREE_HEIGHT = 80;
 
+// 一時的な音楽のため、変更する必要がある
+var BG_SOUND = "se/background_bgm.mp3";
+
 // ページが読み込まれたときに実行される関数
 window.onload = function() {
 
@@ -35,80 +40,357 @@ window.onload = function() {
 	core.fps = 25; // 早い
 	core.fps = 35; // 結構早い
 	// あとは出現率(フレーム判定)を変更できるようにする
+
 	*/
 	core.fps = 15;
 
 	// ゲームで使用する画像ファイルを指定する
-	core.preload(BACKGROUND_IMG, LEFT_BUTTON, RIGHT_BUTTON, BACKGROUND_TREES_IMG, TREE, PLAYER_LIST[0], PLAYER_LIST[1], PLAYER_LIST[2], PLAYER_LIST[3]);
+	core.preload(BACKGROUND_IMG, LEFT_BUTTON, RIGHT_BUTTON, BACKGROUND_TREES_IMG, TREE, PLAYER_LIST[0], PLAYER_LIST[1], PLAYER_LIST[2], PLAYER_LIST[3], START_IMG, GAME_OVER_IMG, BG_SOUND);
+
+
+	// 音
+	core.se1 = Sound.load(BG_SOUND);
+	core.se1.value = 0.1;
 
 	// ファイルのプリロードが完成した時に実行される関数
 	core.onload = function() {
-		// シーンの生成
-		var mainScene = core.rootScene;
-
 		// 背景設定
 		var background = new Sprite(320, 320);
 		background.image = core.assets[BACKGROUND_IMG];
-		mainScene.addChild(background);
+		core.rootScene.addChild(background);
 
+		core.pushScene(core.startScene());
+	};
+
+	/*
+		ゲーム開始場面
+	*/
+	core.startScene = function() {
+
+		// シーンの生成
+		var scene = new Scene();
+
+		// プレ背景の表示
 		var group_forest = new Group();
-		mainScene.addChild(group_forest);
+		scene.addChild(group_forest);
 
 		var group_tree = new Group();
-		mainScene.addChild(group_tree);
+		scene.addChild(group_tree);
 		
-		mainScene.onenterframe = function(){
-			if (core.frame % 50 == 0) {
+		// プレ背景の動作
+		scene.onenterframe = function(){
+			if (core.frame % 40 == 0) {
 				// 左の開始配置(外野)
 				var left_forest = new BgForest(-90, 80, true);
 
 				// 右の開始配置(外野)
 				var right_forest = new BgForest(125, 80, false);
 			
-
-				/*
-				mainScene.addChild(left_forest);
-				mainScene.addChild(right_forest);
-				game.rootScene.insertBefore(ins,game.rootScene.lastChild);
-
-				mainScene.insertBefore(left_forest, mainScene.firstChild);
-				mainScene.insertBefore(right_forest, mainScene.firstChild);
-				*/
-
 				group_forest.insertBefore(left_forest, group_forest.firstChild);
 				group_forest.insertBefore(right_forest, group_forest.firstChild);
 			}
+		};
 
-			if (core.frame % 20 == 0) {
-				var main_tree = new Tree(128, 40, Math.floor(Math.random() * Math.floor(5)));
+		// ゲーム開始メッセージ表示
+		var gameStart = new Sprite(236, 48);
+		gameStart.x = (320 - 236) / 2;
+		gameStart.y = (320 - 48) / 2;
+		gameStart.image = core.assets[START_IMG];
 
-				//mainScene.insertBefore(main_tree, mainScene.firstChild);
-				group_tree.insertBefore(main_tree, group_tree.firstChild);
-			}
-		}
+		gameStart.addEventListener(Event.TOUCH_END, function() {
+			this.remove();
+			group_forest.remove();
+			group_tree.remove();
+			core.se1.play();
+			core.pushScene(core.runnerScene());
+		});
+
+		scene.addChild(gameStart);
+
+		return scene;
+	};
+
+	/*
+		ゲームの本筋場面
+	*/
+	core.runnerScene = function() {
+		// シーンの生成
+		var scene = new Scene();
+
+		// 継続時間（秒）
+		core.timeCount = 0;
+
+		// 一時的な時間保存
+		core.tmpTime = new Date().getTime();
+		
+		// 経過時間ラベル
+		var timeLabel = new Label("走った時間:" + core.timeCount);
+		// 経過時間ラベルを作成する
+		timeLabel.x = 10;
+		timeLabel.y = 10;
+		// 文字色を設定する
+		timeLabel.color = '#000000';
+		// フォントサイズとフォントの種類を指定する
+		timeLabel.font = '12px sens-serif';
+		scene.addChild(timeLabel);
+
+		// 背景設定
+		var group_forest = new Group();
+		scene.addChild(group_forest);
+
+		var group_tree = new Group();
+		scene.addChild(group_tree);
 
 		// 忍者生成予定
 		// 忍者をシーンに追加
 		var player = new Player(32, 32);
-		//mainScene.insertBefore(player, mainScene.lastChild);
-		mainScene.addChild(player);
-
+		scene.addChild(player);
+		
 		// 左ボタン設定
 		var leftBt = new ButtonClass(10, 320 - 60, core.assets[LEFT_BUTTON]);
-		//mainScene.insertBefore(leftBt, mainScene.lastChild);
-		mainScene.addChild(leftBt);
+		scene.addChild(leftBt);
 
 		leftBt.addEventListener(Event.TOUCH_END, function() {
-			player.x -= 40;
+			if (player.x - 40 > 60) {
+				player.x -= 40;
+			}
 		});
 				
 		// 右ボタン設定
 		var rightBt = new ButtonClass(320 - 60, 320 - 60, core.assets[RIGHT_BUTTON]);
-		mainScene.addChild(rightBt);
+		scene.addChild(rightBt);
 		rightBt.addEventListener(Event.TOUCH_END, function() {
-			player.x += 40;
+			if (player.x + 40 < 230) {
+				player.x += 40;
+			}
 		});
-	}
+
+		var scaleX = 0.1;
+		var scaleY = 0.1;
+		var addX = 0;
+		var addY = 1;
+		scene.onenterframe = function(){
+			// 経過時間の計算
+			var minitu = 0;
+			var second = 0;
+			var tmpSecond = Math.floor((new Date().getTime() - core.tmpTime) / 1000);
+			if (tmpSecond >= 60) {
+				minitu = Math.floor(tmpSecond / 60);
+			}
+			second = tmpSecond - minitu * 60;
+
+			// 経過時間ラベル
+			timeLabel.text = "走った時間: " + minitu + " 分 " + second + " 秒";			
+
+			if (core.frame % 40 == 0) {
+				// 左の開始配置(外野)
+				var left_forest = new BgForest(-90, 80, true);
+
+				// 右の開始配置(外野)
+				var right_forest = new BgForest(125, 80, false);
+			
+				group_forest.insertBefore(left_forest, group_forest.firstChild);
+				group_forest.insertBefore(right_forest, group_forest.firstChild);
+			}
+
+			//if (core.frame % 50 == 0) {
+			if (core.frame % 20 == 0) {
+				var main_tree = new Tree(128, 40, Math.floor(Math.random() * Math.floor(5)));
+				main_tree.addEventListener(Event.ENTER_FRAME, function() {
+					if (core.frame % 3 == 0){
+						if (this.y > 185) {
+							// 木と衝突判定
+							if (this.x < player.x && this.x + 30 > player.x) {
+								core.pushScene(core.gameOverScene());
+								group_forest.remove();
+								group_tree.remove();
+								player.remove();
+								leftBt.remove();
+								rightBt.remove();
+								core.se1.stop();
+								return;
+							} else {
+								this.remove();
+							}
+						} else if (this.y <= 185 && this.y > 180){
+							if (this.position == 0){
+								addX = -3;
+							}
+		
+							if (this.position == 1){
+								addX = -1.5;
+							}
+		
+							if (this.position == 2){
+								addX = 0;
+							}
+		
+							if (this.position == 3){
+								addX = 1.5;
+							}
+		
+							if (this.position == 4){
+								addX = 3;
+							}
+							addY = 3;
+							scaleX = 1.1;
+							scaleY = 1.1;
+						} else if (this.y <= 180 && this.y > 160){
+							if (this.position == 0){
+								addX = -4;
+							}
+		
+							if (this.position == 1){
+								addX = -1.6;
+							}
+		
+							if (this.position == 2){
+								addX = 0;
+							}
+		
+							if (this.position == 3){
+								addX = 1.6;
+							}
+		
+							if (this.position == 4){
+								addX = 4;
+							}
+		
+							addY = 5;
+							scaleX = 1.1;
+							scaleY = 1.1;
+						} else if (this.y <= 160 && this.y > 130){
+							if (this.position == 0){
+								addX = -2;
+							}
+		
+							if (this.position == 1){
+								addX = -1.3;
+							}
+		
+							if (this.position == 2){
+								addX = 0;
+							}
+		
+							if (this.position == 3){
+								addX = 1.3;
+							}
+		
+							if (this.position == 4){
+								addX = 2;
+							}
+		
+							addY = 4;
+							scaleX = 1.08;
+							scaleY = 1.08;
+		
+						} else if (this.y <= 130 && this.y > 100){
+							if (this.position == 0){
+								addX = -1.5;
+							}
+		
+							if (this.position == 1){
+								addX = -0.7;
+							}
+		
+							if (this.position == 2){
+								addX = 0;
+							}
+		
+							if (this.position == 3){
+								addX = 0.7;
+							}
+		
+							if (this.position == 4){
+								addX = 1.5;
+							}
+							addY = 3;
+							scaleX = 1.06;
+							scaleY = 1.06;
+						} else if (this.y <= 100 && this.y > 50){
+							if (this.position == 0){
+								addX = -1;
+							}
+		
+							if (this.position == 1){
+								addX = -0.6;
+							}
+		
+							if (this.position == 2){
+								addX = 0;
+							}
+		
+							if (this.position == 3){
+								addX = 0.6;
+							}
+		
+							if (this.position == 4){
+								addX = 1;
+							}
+		
+							addY = 2;
+							scaleX = 1.04;
+							scaleY = 1.03;
+						} else {
+							if (this.position == 0){
+								addX = -0.5;
+							}
+		
+							if (this.position == 1){
+								addX = -0.3;
+							}
+		
+							if (this.position == 2){
+								addX = 0;
+							}
+		
+							if (this.position == 3){
+								addX = 0.3;
+							}
+		
+							if (this.position == 4){
+								addX = 0.5;
+							}
+							scaleX = 1.03;
+							scaleY = 1.01;
+						}
+						
+						this.x += addX;
+						this.y += addY;
+						this.scale(scaleX, scaleY);
+					}
+				});
+
+				group_tree.insertBefore(main_tree, group_tree.firstChild);
+			}
+		}
+
+		return scene;
+	};
+
+	/*
+		ゲーム終了場面
+	*/
+	core.gameOverScene = function() {
+
+		// シーンの生成
+		var scene = new Scene();
+
+		// ゲーム終了メッセージ表示
+		var gameOver = new Sprite(189, 97);
+		gameOver.x = (320 - 189) / 2;
+		gameOver.y = (320 - 97) / 2;
+		gameOver.image = core.assets[GAME_OVER_IMG];
+				
+		gameOver.addEventListener(Event.TOUCH_END, function() {
+			//core.popScene();
+			location.reload();
+		});
+
+		scene.addChild(gameOver);
+
+		return scene;
+	};
 
 	// ゲームスタート
 	core.start();
@@ -149,144 +431,13 @@ var Tree = enchant.Class.create(enchant.Sprite, {
 	initialize: function(x, y, position) {
 		enchant.Sprite.call(this, 64, 126);
 		this.image = core.assets[TREE];
+		this.position = position;
+		this.x = x;
+		this.y = y;
+
 		var scaleX = 0.1;
 		var scaleY = 0.1;
 		this.scale(scaleX, scaleY);
-
-		this.x = x;
-		this.y = y;
-		var addX = 0;
-		var addY = 1;
-		this.addEventListener(Event.ENTER_FRAME, function() {
-			if (core.frame % 5 == 0){
-				if (this.y > 180){
-					this.remove();
-				} else if (this.y <= 180 && this.y > 160){
-					if (position == 0){
-						addX = -4;
-					}
-
-					if (position == 1){
-						addX = -1.6;
-					}
-
-					if (position == 2){
-						addX = 0;
-					}
-
-					if (position == 3){
-						addX = 1.6;
-					}
-
-					if (position == 4){
-						addX = 4;
-					}
-
-					addY = 5;
-					scaleX = 1.1;
-					scaleY = 1.1;
-
-				} else if (this.y <= 160 && this.y > 130){
-					if (position == 0){
-						addX = -2;
-					}
-
-					if (position == 1){
-						addX = -1.3;
-					}
-
-					if (position == 2){
-						addX = 0;
-					}
-
-					if (position == 3){
-						addX = 1.3;
-					}
-
-					if (position == 4){
-						addX = 2;
-					}
-
-					addY = 4;
-					scaleX = 1.08;
-					scaleY = 1.08;
-
-				} else if (this.y <= 130 && this.y > 100){
-					if (position == 0){
-						addX = -1.5;
-					}
-
-					if (position == 1){
-						addX = -0.7;
-					}
-
-					if (position == 2){
-						addX = 0;
-					}
-
-					if (position == 3){
-						addX = 0.7;
-					}
-
-					if (position == 4){
-						addX = 1.5;
-					}
-					addY = 3;
-					scaleX = 1.06;
-					scaleY = 1.06;
-				} else if (this.y <= 100 && this.y > 50){
-					if (position == 0){
-						addX = -1;
-					}
-
-					if (position == 1){
-						addX = -0.6;
-					}
-
-					if (position == 2){
-						addX = 0;
-					}
-
-					if (position == 3){
-						addX = 0.6;
-					}
-
-					if (position == 4){
-						addX = 1;
-					}
-
-					addY = 2;
-					scaleX = 1.04;
-					scaleY = 1.03;
-				} else {
-					if (position == 0){
-						addX = -0.5;
-					}
-
-					if (position == 1){
-						addX = -0.3;
-					}
-
-					if (position == 2){
-						addX = 0;
-					}
-
-					if (position == 3){
-						addX = 0.3;
-					}
-
-					if (position == 4){
-						addX = 0.5;
-					}
-					scaleX = 1.03;
-					scaleY = 1.01;
-				}
-				
-				this.x += addX;
-				this.y += addY;
-				this.scale(scaleX, scaleY);
-			}
-		});
 	}
 });
 
@@ -295,25 +446,16 @@ var BgForest = enchant.Class.create(enchant.Sprite, {
 	initialize: function(x, y, leftRightLFlg) {
 		enchant.Sprite.call(this, 285, 120);
 		this.image = core.assets[BACKGROUND_TREES_IMG];
-		//this._element.style.zIndex = 20; // ※手前に描画したいものほど、値を大きく設定する事
+
 		// 初期の縮小比率
 		var scaleX = 0.5;
 		var scaleY = 0.5;
 		this.scale(scaleX, scaleY);
-
-		// 道の三角図形 320 * 270 
-		// グラフ１ y = ax + b ... 270 = 160a + b と 0 = 0a + b
-		// グラフ２ y = ax + b ... 270 = 160a + b と 0 = 320a + b
-		// this.x - this.width + グラフ１と２で使用するx座標
-		// this.y - this.height + グラフ１と２で使用するy座標
-		// 画面横位置座標 ? 左 160 - 横幅  右 230
 		this.x = x;
-
-		// 画面縦位置座標 ? 195 + 20
 		this.y = y;
 		
 		this.addEventListener(Event.ENTER_FRAME, function() {
-			if (core.frame % 5 == 0){
+			if (core.frame % 4 == 0){
 				if (this.y > 200){
 					this.remove();
 				} else if (this.y <= 200 && this.y > 190){
