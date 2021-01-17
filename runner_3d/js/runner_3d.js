@@ -42,15 +42,18 @@ window.onload = function() {
 	// あとは出現率(フレーム判定)を変更できるようにする
 
 	*/
+	// 木の生成タイミング
+	var makeTree_fps = 20;
+	
 	core.fps = 15;
 
 	// ゲームで使用する画像ファイルを指定する
 	core.preload(BACKGROUND_IMG, LEFT_BUTTON, RIGHT_BUTTON, BACKGROUND_TREES_IMG, TREE, PLAYER_LIST[0], PLAYER_LIST[1], PLAYER_LIST[2], PLAYER_LIST[3], START_IMG, GAME_OVER_IMG, BG_SOUND);
 
-
 	// 音
-	core.se1 = Sound.load(BG_SOUND);
-	core.se1.value = 0.1;
+	core.se1 = new Audio(BG_SOUND);
+	core.se1.value = 0.01;
+	core.se1.loop = true;
 
 	// ファイルのプリロードが完成した時に実行される関数
 	core.onload = function() {
@@ -94,18 +97,165 @@ window.onload = function() {
 		// ゲーム開始メッセージ表示
 		var gameStart = new Sprite(236, 48);
 		gameStart.x = (320 - 236) / 2;
-		gameStart.y = (320 - 48) / 2;
+		gameStart.y = 50;
 		gameStart.image = core.assets[START_IMG];
+		scene.addChild(gameStart);
 
-		gameStart.addEventListener(Event.TOUCH_END, function() {
-			this.remove();
+		// 難易度メッセージ
+		var leval1Label = new Label("とてもゆっくりな速度でゲーム開始");
+		// 経過時間ラベルを作成する
+		leval1Label.x = (320 - 236) / 2 + 5;
+		leval1Label.y = 150;
+		// 文字色を設定する
+		leval1Label.color = '#FF00FF';
+		// フォントサイズとフォントの種類を指定する
+		leval1Label.font = '14px sens-serif';
+		scene.addChild(leval1Label);
+
+		// 難易度メッセージ
+		var leval2Label = new Label("ゆっくり速度でゲーム開始");
+		// 経過時間ラベルを作成する
+		leval2Label.x = (320 - 236) / 2 + 30;
+		leval2Label.y = 170;
+		// 文字色を設定する
+		leval2Label.color = '#FF00FF';
+		// フォントサイズとフォントの種類を指定する
+		leval2Label.font = '14px sens-serif';
+		scene.addChild(leval2Label);
+
+		// 難易度メッセージ
+		var leval3Label = new Label("普通の速度でゲーム開始");
+		// 経過時間ラベルを作成する
+		leval3Label.x = (320 - 236) / 2 + 35;
+		leval3Label.y = 190;
+		// 文字色を設定する
+		leval3Label.color = '#FF00FF';
+		// フォントサイズとフォントの種類を指定する
+		leval3Label.font = '14px sens-serif';
+		scene.addChild(leval3Label);
+
+		// 難易度メッセージ
+		var leval4Label = new Label("速い速度でゲーム開始");
+		// 経過時間ラベルを作成する
+		leval4Label.x = (320 - 236) / 2 + 40;
+		leval4Label.y = 210;
+		// 文字色を設定する
+		leval4Label.color = '#FF00FF';
+		// フォントサイズとフォントの種類を指定する
+		leval4Label.font = '14px sens-serif';
+		scene.addChild(leval4Label);
+
+		// 難易度メッセージ
+		var leval5Label = new Label("かなり速い速度でゲーム開始");
+		// 経過時間ラベルを作成する
+		leval5Label.x = (320 - 236) / 2 + 20;
+		leval5Label.y = 230;
+		// 文字色を設定する
+		leval5Label.color = '#FF00FF';
+		// フォントサイズとフォントの種類を指定する
+		leval5Label.font = '14px sens-serif';
+		scene.addChild(leval5Label);
+
+		// 難易度メッセージ
+		var leval6Label = new Label("※音が出ますのでご注意ください");
+		// 経過時間ラベルを作成する
+		leval6Label.x = (320 - 236) / 2 + 40;
+		leval6Label.y = 250;
+		// 文字色を設定する
+		leval6Label.color = '#FF0000';
+		// フォントサイズとフォントの種類を指定する
+		leval6Label.font = '10px sens-serif';
+		scene.addChild(leval6Label);
+
+		leval1Label.addEventListener(Event.TOUCH_END, function() {
+			core.fps = 10;
+			makeTree_fps = 30;
+
+			scene.removeChild(this);
+			scene.removeChild(leval2Label);
+			scene.removeChild(leval3Label);
+			scene.removeChild(leval4Label);
+			scene.removeChild(leval5Label);
+			scene.removeChild(leval6Label);
+			gameStart.remove();
 			group_forest.remove();
 			group_tree.remove();
+			core.se1.currentTime = 0;
 			core.se1.play();
 			core.pushScene(core.runnerScene());
 		});
 
-		scene.addChild(gameStart);
+		leval2Label.addEventListener(Event.TOUCH_END, function() {
+			core.fps = 15;
+			makeTree_fps = 25;
+
+			scene.removeChild(leval1Label);
+			scene.removeChild(this);
+			scene.removeChild(leval3Label);
+			scene.removeChild(leval4Label);
+			scene.removeChild(leval5Label);
+			scene.removeChild(leval6Label);
+			gameStart.remove();
+			group_forest.remove();
+			group_tree.remove();
+			core.se1.currentTime = 0;
+			core.se1.play();
+			core.pushScene(core.runnerScene());
+		});
+
+		leval3Label.addEventListener(Event.TOUCH_END, function() {
+			core.fps = 20;
+			makeTree_fps = 20;
+
+			scene.removeChild(leval1Label);
+			scene.removeChild(leval2Label);
+			scene.removeChild(this);
+			scene.removeChild(leval4Label);
+			scene.removeChild(leval5Label);
+			scene.removeChild(leval6Label);
+			gameStart.remove();
+			group_forest.remove();
+			group_tree.remove();
+			core.se1.currentTime = 0;
+			core.se1.play();
+			core.pushScene(core.runnerScene());
+		});
+
+		leval4Label.addEventListener(Event.TOUCH_END, function() {
+			core.fps = 25;
+			makeTree_fps = 15;
+
+			scene.removeChild(leval1Label);
+			scene.removeChild(leval2Label);
+			scene.removeChild(leval3Label);
+			scene.removeChild(this);
+			scene.removeChild(leval5Label);
+			scene.removeChild(leval6Label);
+			gameStart.remove();
+			group_forest.remove();
+			group_tree.remove();
+			core.se1.currentTime = 0;
+			core.se1.play();
+			core.pushScene(core.runnerScene());
+		});
+
+		leval5Label.addEventListener(Event.TOUCH_END, function() {
+			core.fps = 30;
+			makeTree_fps = 10;
+
+			scene.removeChild(leval1Label);
+			scene.removeChild(leval2Label);
+			scene.removeChild(leval3Label);
+			scene.removeChild(leval4Label);
+			scene.removeChild(this);
+			scene.removeChild(leval6Label);
+			gameStart.remove();
+			group_forest.remove();
+			group_tree.remove();
+			core.se1.currentTime = 0;
+			core.se1.play();
+			core.pushScene(core.runnerScene());
+		});
 
 		return scene;
 	};
@@ -193,8 +343,7 @@ window.onload = function() {
 				group_forest.insertBefore(right_forest, group_forest.firstChild);
 			}
 
-			//if (core.frame % 50 == 0) {
-			if (core.frame % 20 == 0) {
+			if (core.frame % makeTree_fps == 0) {
 				var main_tree = new Tree(128, 40, Math.floor(Math.random() * Math.floor(5)));
 				main_tree.addEventListener(Event.ENTER_FRAME, function() {
 					if (core.frame % 3 == 0){
@@ -207,7 +356,7 @@ window.onload = function() {
 								player.remove();
 								leftBt.remove();
 								rightBt.remove();
-								core.se1.stop();
+								core.se1.pause();
 								return;
 							} else {
 								this.remove();
