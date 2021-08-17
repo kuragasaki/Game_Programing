@@ -1,16 +1,27 @@
 // enchant.js本体やクラスをエクスポート
 enchant();
 
-var BACKGROUND_IMG = 'img/background.png';
+var BACKGROUND_IMG = 'img/background4.png';
+var BACKGROUND_LEFT_IMG = 'img/background_left.png';
+var BACKGROUND_RIGHT_IMG = 'img/background_right.png';
+
 var START_IMG = 'img/start.png';
 var GAME_OVER_IMG = 'img/gameover.png';
+var GAME_CLEAR_IMG = 'img/gameclear.png';
 
 var BACKGROUND_TREES_IMG = 'img/background_trees.png';
-var TREE = 'img/tree.png';
+
+var TREE1 = 'img/tree2_width65.png';
+var TREE2 = 'img/tree_image.png';
+
 var ROLLEDBOOK = 'img/rolled_book.png';
 var KOBAN = 'img/koban.png';
 var SMOKE1 = 'img/smoke1.png';
 var SMOKE2 = 'img/smoke2.png';
+var SUITO = 'img/suito_image.png';
+
+var GROUND_ENEMY1 = 'img/ground_enemy1.png';
+var GROUND_ENEMY2 = 'img/ground_enemy2.png';
 
 // キャラクター画像用変数
 var PLAYER_LIST = ['img/both_player.png', 'img/front_left_back_right_player.png', 'img/both_player.png', 'img/front_right_back_left_player.png'];
@@ -25,11 +36,14 @@ var TREE_WIDTH = 105;
 var TREE_HEIGHT = 80;
 
 // 一時的な音楽のため、変更する必要がある
-var BG_SOUND = "se/background_bgm.mp3";
+// var BG_SOUND = "se/background_bgm.mp3";
 var BG_BUTSUKARU = "se/butsukaru_oto.mp3";
 var BG_KOBAN_SHUTOKU = "se/koban_shutoku_oto.mp3";
 var BG_TOURINUKE = "se/tourinuke_oto.mp3";
 var BG_ROLLEDBOOK_SHUTOKU = "se/rolled_book_shutoku_oto.mp3";
+var BG_SKULL_OUT = "se/skull_out.mp3";
+var BG_SKULL_OUT_TREE = "se/skull_out2.mp3";
+var BG_GAME_CLEAR = "se/game_clear.mp3";
 
 // ページが読み込まれたときに実行される関数
 window.onload = function() {
@@ -55,12 +69,21 @@ window.onload = function() {
 	core.fps = 15;
 
 	// ゲームで使用する画像、音声ファイルを指定する
-	core.preload(BACKGROUND_IMG, LEFT_BUTTON, RIGHT_BUTTON, BACKGROUND_TREES_IMG, TREE, ROLLEDBOOK, KOBAN, SMOKE1, SMOKE2, PLAYER_LIST[0], PLAYER_LIST[1], PLAYER_LIST[2], PLAYER_LIST[3], START_IMG, GAME_OVER_IMG, BG_SOUND, BG_BUTSUKARU, BG_KOBAN_SHUTOKU, BG_TOURINUKE, BG_ROLLEDBOOK_SHUTOKU);
+	core.preload(BACKGROUND_IMG, LEFT_BUTTON, RIGHT_BUTTON, BACKGROUND_TREES_IMG, ROLLEDBOOK, KOBAN, SMOKE1, SMOKE2, PLAYER_LIST[0], PLAYER_LIST[1], PLAYER_LIST[2], PLAYER_LIST[3], START_IMG
+		, SUITO
+		, GAME_OVER_IMG, GAME_CLEAR_IMG
+		// , BG_SOUND
+		, BACKGROUND_LEFT_IMG, BACKGROUND_RIGHT_IMG
+		, TREE1, TREE2
+		// , SKULL_ENEMY
+		, GROUND_ENEMY1, GROUND_ENEMY2
+		, BG_BUTSUKARU, BG_KOBAN_SHUTOKU, BG_TOURINUKE, BG_ROLLEDBOOK_SHUTOKU
+		, BG_SKULL_OUT, BG_SKULL_OUT_TREE, BG_GAME_CLEAR);
 
 	// 音
-	core.se1 = new Audio(BG_SOUND);
-	core.se1.value = 0;
-	core.se1.loop = true;
+	// core.se1 = new Audio(BG_SOUND);
+	// core.se1.value = 0;
+	// core.se1.loop = true;
 
 	// ぶつかる音
 	core.se2 = new Audio(BG_BUTSUKARU);
@@ -82,6 +105,21 @@ window.onload = function() {
 	core.se5.value = 30;
 	core.se5.loop = false;
 
+	// 骨出現
+	core.se6 = new Audio(BG_SKULL_OUT);
+	core.se6.value = 5;
+	core.se6.loop = false;
+
+	// 髑髏出現
+	core.se7 = new Audio(BG_SKULL_OUT_TREE);
+	core.se7.value = 5;
+	core.se7.loop = false;
+
+	// ゲームクリア
+	core.se8 = new Audio(BG_GAME_CLEAR);
+	core.se8.value = 5;
+	core.se8.loop = false;
+
 	// ファイルのプリロードが完成した時に実行される関数
 	core.onload = function() {
 		// 背景設定
@@ -101,25 +139,35 @@ window.onload = function() {
 		var scene = new Scene();
 
 		// プレ背景の表示
-		var group_forest = new Group();
-		scene.addChild(group_forest);
+		// var group_forest = new Group();
+		// scene.addChild(group_forest);
+
+		var group_forest_left = new Group();
+		var group_forest_right = new Group();
+		scene.addChild(group_forest_left);
+		scene.addChild(group_forest_right);
+
+		var bgForestLeft = new BgForestPre(-425, 35, BACKGROUND_LEFT_IMG);
+		var bgForestRight = new BgForestPre(-255, 35, BACKGROUND_RIGHT_IMG);
+		group_forest_left.insertBefore(bgForestLeft, group_forest_left.firstChild);
+		group_forest_right.insertBefore(bgForestRight, group_forest_right.firstChild);
 
 		var group_item = new Group();
 		scene.addChild(group_item);
 		
-		// プレ背景の動作
-		scene.onenterframe = function(){
-			if (core.frame % 20 == 0) {
-				// 左の開始配置(外野)
-				var left_forest = new BgForest(-90, 80, true);
+		// // プレ背景の動作
+		// scene.onenterframe = function(){
+		// 	if (core.frame % 20 == 0) {
+		// 		// 左の開始配置(外野)
+		// 		var left_forest = new BgForest(-90, 80, true);
 
-				// 右の開始配置(外野)
-				var right_forest = new BgForest(125, 80, false);
+		// 		// 右の開始配置(外野)
+		// 		var right_forest = new BgForest(125, 80, false);
 			
-				group_forest.insertBefore(left_forest, group_forest.firstChild);
-				group_forest.insertBefore(right_forest, group_forest.firstChild);
-			}
-		};
+		// 		group_forest.insertBefore(left_forest, group_forest.firstChild);
+		// 		group_forest.insertBefore(right_forest, group_forest.firstChild);
+		// 	}
+		// };
 
 		// ゲーム開始メッセージ表示
 		var gameStart = new Sprite(236, 48);
@@ -127,6 +175,8 @@ window.onload = function() {
 		gameStart.y = 50;
 		gameStart.image = core.assets[START_IMG];
 		scene.addChild(gameStart);
+
+		/*
 
 		// 難易度メッセージ
 		var leval1Label = new Label("とてもゆっくりな速度でゲーム開始");
@@ -149,6 +199,22 @@ window.onload = function() {
 		// フォントサイズとフォントの種類を指定する
 		leval2Label.font = '14px sens-serif';
 		scene.addChild(leval2Label);
+
+		*/
+
+		// 難易度メッセージ
+		var leval3Label = new Label("タッチするとゲームが開始します");
+		// 経過時間ラベルを作成する
+		leval3Label.x = (320 - 236) / 2;
+		leval3Label.y = 120;
+		//leval3Label.y = 190;
+		// 文字色を設定する
+		leval3Label.color = '#FF00FF';
+		// フォントサイズとフォントの種類を指定する
+		leval3Label.font = '16px sens-serif';
+		scene.addChild(leval3Label);
+
+		/*
 
 		// 難易度メッセージ
 		var leval3Label = new Label("普通の速度でゲーム開始");
@@ -183,17 +249,21 @@ window.onload = function() {
 		leval5Label.font = '14px sens-serif';
 		scene.addChild(leval5Label);
 
+		*/
+
 		// 難易度メッセージ
 		var leval6Label = new Label("※音が出ますのでご注意ください");
 		// 経過時間ラベルを作成する
 		leval6Label.x = (320 - 236) / 2 + 40;
-		leval6Label.y = 250;
+		leval6Label.y = 150;
+		//leval6Label.y = 250;
 		// 文字色を設定する
 		leval6Label.color = '#FF0000';
 		// フォントサイズとフォントの種類を指定する
 		leval6Label.font = '10px sens-serif';
 		scene.addChild(leval6Label);
 
+		/*
 		leval1Label.addEventListener(Event.TOUCH_END, function() {
 			core.fps = 10;
 			makeTree_fps = 30;
@@ -247,7 +317,24 @@ window.onload = function() {
 			core.se1.play();
 			core.pushScene(core.runnerScene());
 		});
+		*/
 
+		leval3Label.addEventListener(Event.TOUCH_END, function() {
+			core.fps = 20;
+			makeTree_fps = 20;
+
+			scene.removeChild(this);
+			scene.removeChild(leval6Label);
+			gameStart.remove();
+			group_forest_left.remove();
+			group_forest_right.remove();
+			group_item.remove();
+			// core.se1.currentTime = 0;
+			// core.se1.play();
+			core.pushScene(core.runnerScene());
+		});
+
+		/*
 		leval4Label.addEventListener(Event.TOUCH_END, function() {
 			core.fps = 25;
 			makeTree_fps = 15;
@@ -283,6 +370,7 @@ window.onload = function() {
 			core.se1.play();
 			core.pushScene(core.runnerScene());
 		});
+		*/
 
 		return scene;
 	};
@@ -312,6 +400,16 @@ window.onload = function() {
 		scene.addChild(timeLabel);
 
 		// 背景設定
+		var group_forest_left = new Group();
+		var group_forest_right = new Group();
+		scene.addChild(group_forest_left);
+		scene.addChild(group_forest_right);
+
+		var bgForestLeft = new BgForestLeftRight(-420, 35, BACKGROUND_LEFT_IMG, true);
+		var bgForestRight = new BgForestLeftRight(-260, 35, BACKGROUND_RIGHT_IMG, false);
+		group_forest_left.insertBefore(bgForestLeft, group_forest_left.firstChild);
+		group_forest_right.insertBefore(bgForestRight, group_forest_right.firstChild);
+
 		var group_forest = new Group();
 		scene.addChild(group_forest);
 
@@ -370,43 +468,51 @@ window.onload = function() {
 			var minitu = 0;
 			var second = 0;
 			var tmpSecond = Math.floor((new Date().getTime() - core.tmpTime) / 1000);
+			
 			if (tmpSecond >= 60) {
 				minitu = Math.floor(tmpSecond / 60);
 			}
 			second = tmpSecond - minitu * 60;
 
 			// 経過時間ラベル
-			timeLabel.text = "走った時間: " + minitu + " 分 " + second + " 秒";
+			timeLabel.text = "経過時間: " + minitu + " 分 " + second + " 秒";
 
-			if (core.frame % 10 == 0) {
-				// 左の開始配置(外野)
-				var left_forest = new BgForest(-90, 80, true);
-
-				// 右の開始配置(外野)
-				var right_forest = new BgForest(125, 80, false);
-			
-				group_forest.insertBefore(left_forest, group_forest.firstChild);
-				group_forest.insertBefore(right_forest, group_forest.firstChild);
+			if (tmpSecond >= 180) {
+				// if (tmpSecond >= 300) {
+				core.se8.currentTime = 0;
+				core.se8.play();
+				core.pushScene(core.gameClearScene());
 			}
 
-			
-			//if (core.frame % makeTree_fps == 0) {
-			if (core.frame % 10 == 0) {
-				var create_item_number = Math.floor(Math.random() * Math.floor(20));
-				//var create_item_number = 1;
+			// 左右の背景を表示
+			if (tmpSecond == 120) {
+				group_forest_left.insertBefore(new BgForestLeftRight(-420, 35, BACKGROUND_LEFT_IMG, true), group_forest_left.firstChild);
+				group_forest_right.insertBefore(new BgForestLeftRight(-260, 35, BACKGROUND_RIGHT_IMG, false), group_forest_right.firstChild);
+			}
 
+			group_forest.insertBefore(new BgForest(Math.floor(Math.random() * 13), Math.floor(Math.random() * 13) % 2 == 0, bgForestLeft.y), group_forest.firstChild);
+			// group_forest.insertBefore(new BgForest(12, true), group_forest.firstChild);
+			group_forest.insertBefore(new BgForest(Math.floor(Math.random() * 13), Math.floor(Math.random() * 13) % 2 == 0, bgForestLeft.y), group_forest.firstChild);
+			group_forest.insertBefore(new BgForest(Math.floor(Math.random() * 13), Math.floor(Math.random() * 13) % 2 == 0, bgForestLeft.y), group_forest.firstChild);
+			group_forest.insertBefore(new BgForest(Math.floor(Math.random() * 13), Math.floor(Math.random() * 13) % 2 == 0, bgForestLeft.y), group_forest.firstChild);
+			// var bgForestLeft = new BgForestLeftRight(-420, 35, BACKGROUND_LEFT_IMG, true);
+			// var bgForestRight = new BgForestLeftRight(-260, 35, BACKGROUND_RIGHT_IMG, false);
+
+			console.log("tmpSecond : " + tmpSecond);
+			if (core.frame % 10 == 0 && tmpSecond < 10) {
+				var create_item_number = Math.floor(Math.random() * Math.floor(20));
 				var item_position = Math.floor(Math.random() * Math.floor(5));
 				
-				/*
-				var item_position = testindex;
-				if (testindex >= 4) {
-					testindex = 0;
+				var main_item = null;
+				if (create_item_number <= 3) {
+					main_item = new Item(create_item_number, item_position);
+				} else if (create_item_number <= 7) {
+					main_item = new Tree(item_position);
 				} else {
-					testindex ++;
+					main_item = new Skull(127, 50, item_position);
+					main_item.imageNumber = 0;
 				}
-*/
-				var main_item = new ItemOrTree(create_item_number, item_position);
-
+				
 				main_item.addEventListener(Event.ENTER_FRAME, function() {
 					if (create_item_number == 0) {
 						if (this.y > 235 && this.y < 275){
@@ -432,8 +538,8 @@ window.onload = function() {
 							}
 						}
 					} else {
-						if (this.y > 200){
-							// 木と衝突判定
+						if (this.y > 200 && this.imageNumber != 0 && this.imageNumber != 1 && this.imageNumber != 2){
+							// 障害物(木)と衝突判定
 							if (this.x < player.x && this.x + 30 > player.x) {
 								if (player.rolledbook == 0) {
 									core.se2.currentTime = 0;
@@ -444,7 +550,7 @@ window.onload = function() {
 									player.remove();
 									leftBt.remove();
 									rightBt.remove();
-									core.se1.pause();
+									// core.se1.pause();
 									return;
 								} else {
 									scene.addChild(new SmokeClass(player.x - 20, player.y - 25));
@@ -456,6 +562,48 @@ window.onload = function() {
 								}
 							}
 							this.remove();
+						} else if (this.y > 150 && this.imageNumber != 0 && this.imageNumber != 1 && this.imageNumber != 2){
+							this.image = core.assets[TREE2];
+							core.se7.currentTime = 10;
+							core.se7.play();
+						} else if (create_item_number > 10){
+							if (this.y > 270 && this.imageNumber == 2) {
+								// 障害物(骨)と衝突判定
+								if (this.x < player.x && this.x + 30 > player.x) {
+									if (player.rolledbook == 0) {
+										core.se2.currentTime = 0;
+										core.se2.play();
+										core.pushScene(core.gameOverScene());
+										group_forest.remove();
+										group_item.remove();
+										player.remove();
+										leftBt.remove();
+										rightBt.remove();
+										// core.se1.pause();
+										return;
+									} else {
+										scene.addChild(new SmokeClass(player.x - 20, player.y - 25));
+										core.se4.currentTime = 0;
+										core.se4.play();
+										player.crashFlg = true;
+										player.rolledbook -= 1;
+										rolledLabel.text = "忍術回数:" + player.rolledbook + "回";
+									}
+								}
+								this.remove();
+							} else if (this.y > 200 && this.imageNumber == 1){
+								this.image = core.assets[GROUND_ENEMY2];
+								this.imageNumber = 2;
+								// core.se6.currentTime = 0;
+								// core.se6.play();
+								// scene.addChild(new SmokeClass2(this.x - 5, this.y + 5));
+							} else if (this.y > 150 && this.imageNumber == 0){
+								this.image = core.assets[GROUND_ENEMY1];
+								core.se6.currentTime = 0;
+								core.se6.play();
+								this.imageNumber = 1;
+								scene.addChild(new SmokeClass2(this.x - 5, this.y + 5));
+							}
 						}
 					}
 				});
@@ -478,8 +626,10 @@ window.onload = function() {
 		// ゲーム終了メッセージ表示
 		var gameOver = new Sprite(189, 97);
 		gameOver.x = (320 - 189) / 2;
-		gameOver.y = (320 - 97) / 2;
+		gameOver.y = 10;
+
 		gameOver.image = core.assets[GAME_OVER_IMG];
+		gameOver.tl.moveTo(gameOver.x, (320 - 97) / 2 - 50, 5);
 				
 		gameOver.addEventListener(Event.TOUCH_END, function() {
 			//core.popScene();
@@ -487,6 +637,31 @@ window.onload = function() {
 		});
 
 		scene.addChild(gameOver);
+
+		return scene;
+	};
+
+	/*
+		ゲームクリア場面
+	*/
+	core.gameClearScene = function() {
+
+		// シーンの生成
+		var scene = new Scene();
+
+		// ゲーム終了メッセージ表示
+		var gameClear = new Sprite(184, 122);
+		gameClear.x = (320 - 180) / 2;
+		gameClear.y = -120;
+
+		gameClear.image = core.assets[GAME_CLEAR_IMG];
+		gameClear.tl.moveTo(gameClear.x, 320 / 2 - 75, 50);
+				
+		gameClear.addEventListener(Event.TOUCH_END, function() {
+			location.reload();
+		});
+
+		scene.addChild(gameClear);
 
 		return scene;
 	};
@@ -507,6 +682,9 @@ var Player = enchant.Class.create(enchant.Sprite, {
 		this.koban = 0;
 		this.rolledbook = 2;
 		this.crashFlg = false;
+		// this.life = 100;
+		// this.lifeTime = Math.floor((new Date().getTime()) / 1000);
+		
 
 		this.addEventListener(Event.ENTER_FRAME, function() {
 			if (this.crashFlg) {
@@ -534,28 +712,165 @@ var Player = enchant.Class.create(enchant.Sprite, {
 			}
 		});
 	}
+	// , clear: function() {
+
+	// 	this.tl.scaleTo(0.001, 0.001, 50);
+	// 	this.tl.and();
+	// 	this.tl.moveTo(120, 50, 50);
+
+	// 	this.addEventListener(Event.ENTER_FRAME, function() {
+	// 		if (this.crashFlg) {
+	// 			this.image = null;
+
+	// 			if (core.frame % 5 == 0){
+	// 				this.crashFlg = false;
+	// 			}
+	// 		} else {
+	// 			if (core.frame % 2 == 0){
+	// 				if (this.imgIndex < 3){
+	// 					this.imgIndex ++;
+	// 				} else {
+	// 					this.imgIndex = 0;
+	// 				}
+	
+	// 				if (this.imgIndex % 2 == 0){
+	// 					this.y = 290;
+	// 				} else {
+	// 					this.y = 289;
+	// 				}
+	
+	// 				this.image = core.assets[PLAYER_LIST[this.imgIndex]];
+	// 			}
+	// 		}
+	// 	});
+
+	// }
 });
 
+// // アイテム、障害物の生成
+// var ItemOrTree = enchant.Class.create(enchant.Sprite, {
+// 	initialize: function(item_number, position) {
+
+// 		var scaleX_before = 0;
+// 		var scaleY_before = 0;
+// 		var scaleX_after = 0;
+// 		var scaleY_after = 0;
+// 		var moveSpeed = 0;
+// 		var moveToX = 0;
+// 		var moveToY = 0;
+
+// 		if (0 == item_number) {
+// 			// 画像サイズ調整
+// 			enchant.Sprite.call(this, 40, 100);
+
+// 			// 出現位置
+// 			this.x = 140; // 画面サイズ(320) / 2 - 画像横サイズ(40) / 2
+// 			this.y = 50;
+// 			this.image = core.assets[ROLLEDBOOK];
+
+// 			scaleX_before = 0.01;
+// 			scaleY_before = 0.01;
+// 			scaleX_after = 0.3;
+// 			scaleY_after = 0.3;
+// 			moveSpeed = 70;
+// 			moveToY = 350;
+
+// 			if (position == 0) {
+// 				moveToX = this.x - 110;
+// 			} else if (position == 1) {
+// 				moveToX = this.x - 55;
+// 			} else if (position == 2) {
+// 				moveToX = this.x + 0;
+// 			} else if (position == 3) {
+// 				moveToX = this.x + 55;
+// 			} else if (position == 4) {
+// 				moveToX = this.x + 110;
+// 			}
+
+// 		} else if (1 <= item_number && item_number <= 3) {
+// 			// 画像サイズ調整
+// 			enchant.Sprite.call(this, 40, 55);
+
+// 			// 出現位置
+// 			this.x = 140; // 画面サイズ(320) / 2 - 画像横サイズ(40) / 2
+// 			this.y = 75;
+// 			this.image = core.assets[KOBAN];
+
+// 			scaleX_before = 0.01;
+// 			scaleY_before = 0.01;
+// 			scaleX_after = 0.3;
+// 			scaleY_after = 0.3;
+// 			moveSpeed = 70;
+// 			moveToY = 350;
+
+// 			if (position == 0) {
+// 				moveToX = this.x - 110;
+// 			} else if (position == 1) {
+// 				moveToX = this.x - 55;
+// 			} else if (position == 2) {
+// 				moveToX = this.x + 0;
+// 			} else if (position == 3) {
+// 				moveToX = this.x + 55;
+// 			} else if (position == 4) {
+// 				moveToX = this.x + 110;
+// 			}
+// 		} else {
+// 			// 画像サイズ調整
+// 			enchant.Sprite.call(this, 64, 126);
+
+// 			// 出現位置
+// 			this.x = 128;
+// 			this.y = 40;
+// 			this.image = core.assets[TREE];
+
+// 			scaleX_before = 0.1;
+// 			scaleY_before = 0.1;
+// 			scaleX_after = 2.2;
+// 			scaleY_after = 1.4;
+// 			moveSpeed = 70;
+// 			moveToY = 260;
+	
+// 			if (position == 0) {
+// 				moveToX = this.x - 110;
+// 			} else if (position == 1) {
+// 				moveToX = this.x - 55;
+// 			} else if (position == 2) {
+// 				moveToX = this.x + 0;
+// 			} else if (position == 3) {
+// 				moveToX = this.x + 55;
+// 			} else if (position == 4) {
+// 				moveToX = this.x + 110;
+// 			}
+// 		} 
+
+// 		this.scale(scaleX_before, scaleY_before);
+// 		this.tl.scaleTo(scaleX_after, scaleY_after, moveSpeed);
+// 		this.tl.and();
+// 		this.tl.moveTo(moveToX, moveToY, moveSpeed);
+// 	}
+// });
+
 // アイテム、障害物の生成
-var ItemOrTree = enchant.Class.create(enchant.Sprite, {
+var Item = enchant.Class.create(enchant.Sprite, {
 	initialize: function(item_number, position) {
 
-		var scaleX_before = 0;
-		var scaleY_before = 0;
-		var scaleX_after = 0;
-		var scaleY_after = 0;
-		var moveSpeed = 0;
+		var scaleX_before = 0.01;
+		var scaleY_before = 0.01;
+		var scaleX_after = 0.3;
+		var scaleY_after = 0.3;
+		var moveSpeed = 70;
 		var moveToX = 0;
-		var moveToY = 0;
+		var moveToY = 350;
 
 		if (0 == item_number) {
 			// 画像サイズ調整
 			enchant.Sprite.call(this, 40, 100);
 
 			// 出現位置
-			this.x = 140; // 画面サイズ(320) / 2 - 画像横サイズ(40) / 2
+			this.x = 140;
 			this.y = 50;
 			this.image = core.assets[ROLLEDBOOK];
+			// this.image = core.assets[SUITO];
 
 			scaleX_before = 0.01;
 			scaleY_before = 0.01;
@@ -576,7 +891,7 @@ var ItemOrTree = enchant.Class.create(enchant.Sprite, {
 				moveToX = this.x + 110;
 			}
 
-		} else if (1 <= item_number && item_number <= 3) {
+		} else {
 			// 画像サイズ調整
 			enchant.Sprite.call(this, 40, 55);
 
@@ -585,40 +900,6 @@ var ItemOrTree = enchant.Class.create(enchant.Sprite, {
 			this.y = 75;
 			this.image = core.assets[KOBAN];
 
-			scaleX_before = 0.01;
-			scaleY_before = 0.01;
-			scaleX_after = 0.3;
-			scaleY_after = 0.3;
-			moveSpeed = 70;
-			moveToY = 350;
-
-			if (position == 0) {
-				moveToX = this.x - 110;
-			} else if (position == 1) {
-				moveToX = this.x - 55;
-			} else if (position == 2) {
-				moveToX = this.x + 0;
-			} else if (position == 3) {
-				moveToX = this.x + 55;
-			} else if (position == 4) {
-				moveToX = this.x + 110;
-			}
-		} else {
-			// 画像サイズ調整
-			enchant.Sprite.call(this, 64, 126);
-
-			// 出現位置
-			this.x = 128;
-			this.y = 40;
-			this.image = core.assets[TREE];
-
-			scaleX_before = 0.1;
-			scaleY_before = 0.1;
-			scaleX_after = 2.2;
-			scaleY_after = 1.4;
-			moveSpeed = 70;
-			moveToY = 260;
-	
 			if (position == 0) {
 				moveToX = this.x - 110;
 			} else if (position == 1) {
@@ -639,31 +920,148 @@ var ItemOrTree = enchant.Class.create(enchant.Sprite, {
 	}
 });
 
-// 左右の背景に当たる森林の生成
+// 障害物(木)の生成
+var Tree = enchant.Class.create(enchant.Sprite, {
+	initialize: function(position) {
+
+		var scaleX_before = 0.1;
+		var scaleY_before = 0.1;
+		var scaleX_after = 2.2;
+		var scaleY_after = 1.4;
+		var moveSpeed = 70;
+		var moveToX = 0;
+		var moveToY = 260;
+
+		// 画像サイズ調整
+		enchant.Sprite.call(this, 64, 125);
+
+		// 出現位置
+		this.x = 128;
+		this.y = 40;
+		this.image = core.assets[TREE1];
+	
+		if (position == 0) {
+			moveToX = this.x - 110;
+		} else if (position == 1) {
+			moveToX = this.x - 55;
+		} else if (position == 2) {
+			moveToX = this.x + 0;
+		} else if (position == 3) {
+			moveToX = this.x + 55;
+		} else if (position == 4) {
+			moveToX = this.x + 110;
+		}
+
+		this.scale(scaleX_before, scaleY_before);
+		this.tl.scaleTo(scaleX_after, scaleY_after, moveSpeed);
+		this.tl.and();
+		this.tl.moveTo(moveToX, moveToY, moveSpeed);
+	}
+});
+
+// 障害物(骨)の生成
+var Skull = enchant.Class.create(enchant.Sprite, {
+	initialize: function(startX, startY, positionNum) {
+
+		var scaleX_before = 0.0001;
+		var scaleY_before = 0.0001;
+		var scaleX_after = 1.2;
+		var scaleY_after = 1.2;
+		var moveSpeed = 90;
+		var moveToX = 0;
+		var moveToY = 400;
+
+		// 画像サイズ調整
+		enchant.Sprite.call(this, 65, 75);
+
+		// this.x = 125;
+		this.x = startX;
+		this.y = startY;
+
+		// 出現位置
+		if (positionNum == 0) {
+			// 中央
+			moveToX = 125;
+		} else if (positionNum == 1) {
+			// 左１
+			moveToX = 55;
+		} else if (positionNum == 2) {
+			// 最左
+			moveToX = 0;
+		} else if (positionNum == 3) {
+			// 右１
+			moveToX = 185;
+		} else if (positionNum == 4) {
+			// 最右
+			moveToX = 245;
+		}
+
+		this.scale(scaleX_before, scaleY_before);
+		this.tl.scaleTo(scaleX_after, scaleY_after, moveSpeed);
+		this.tl.and();
+		// this.tl.moveTo(moveToX, moveToY, 100);
+		this.tl.moveTo(moveToX, moveToY, moveSpeed);
+	}
+});
+
+// // 左右の背景に当たる森林の生成
+// var BgForest = enchant.Class.create(enchant.Sprite, {
+// 	initialize: function(x, y, leftRightLFlg) {
+// 		enchant.Sprite.call(this, 285, 120);
+// 		this.image = core.assets[BACKGROUND_TREES_IMG];
+
+// 		// 初期の縮小比率
+// 		var scaleX = 0.5;
+// 		var scaleY = 0.5;
+// 		this.scale(scaleX, scaleY);
+// 		this.x = x;
+// 		this.y = y;
+
+// 		this.tl.scaleTo(2.5, 80);
+// 		this.tl.and();
+
+// 		if (leftRightLFlg) {
+// 			this.tl.moveTo(this.x - 300, 250, 50);
+// 		} else {
+// 			this.tl.moveTo(this.x + 300, 250, 50);
+// 		}
+
+// 		this.addEventListener(Event.ENTER_FRAME, function() {
+// 			if (this.y > 200){
+// 				this.remove();
+// 			}
+// 		});
+// 	}
+// });
+
+// 木の生成
 var BgForest = enchant.Class.create(enchant.Sprite, {
-	initialize: function(x, y, leftRightLFlg) {
-		enchant.Sprite.call(this, 285, 120);
-		this.image = core.assets[BACKGROUND_TREES_IMG];
+	initialize: function(position, leftRightLFlg, imgPositionY) {
+		// サイズ設定
+		enchant.Sprite.call(this, 64, 125);
+		this.imgPositionY = imgPositionY;
+		// this.image = core.assets[TREE1];
 
 		// 初期の縮小比率
-		var scaleX = 0.5;
-		var scaleY = 0.5;
-		this.scale(scaleX, scaleY);
-		this.x = x;
-		this.y = y;
-
-		this.tl.scaleTo(2.5, 80);
-		this.tl.and();
+		this.scale(0.05, 0.05);
+		this.y = 45;
+		this.x = position * 10 - 10;
+		var gotoPosition = (320 + (12 - position) * 10 + 64) * -1;
 
 		if (leftRightLFlg) {
-			this.tl.moveTo(this.x - 300, 250, 50);
-		} else {
-			this.tl.moveTo(this.x + 300, 250, 50);
+			this.x = 130 - this.x + 125;
+			gotoPosition = gotoPosition * -1;
 		}
+
+		this.tl.moveTo(this.x + gotoPosition, 500, 100);
+		this.tl.and();
+		this.tl.scaleTo(1.1, 50);
 
 		this.addEventListener(Event.ENTER_FRAME, function() {
 			if (this.y > 200){
 				this.remove();
+			} else if (this.y >= this.imgPositionY) {
+				this.image = core.assets[TREE1];
 			}
 		});
 	}
@@ -691,7 +1089,7 @@ var SmokeClass = enchant.Class.create(enchant.Sprite, {
 		this.y = y;
 
 		// 画像切り替え番号
-		this.imageNumber = 0;
+		// this.imageNumber = 0;
 
 		this.addEventListener(Event.ENTER_FRAME, function() {
 			if (core.frame % 2 == 0){
@@ -707,5 +1105,74 @@ var SmokeClass = enchant.Class.create(enchant.Sprite, {
 			this.imageNumber++;
 			*/
 		});
+	}
+});
+
+// 衝突時の煙
+var SmokeClass2 = enchant.Class.create(enchant.Sprite, {
+	initialize: function(x, y) {
+		// 画像の大きさ
+		enchant.Sprite.call(this, 74, 72);
+		this.image = core.assets[SMOKE1];
+
+		// 表示位置
+		this.x = x;
+		this.y = y;
+		this.scale(0.5, 0.5);
+
+		// 画像切り替え番号
+		this.tl.moveTo(x, y + 10, 100);
+
+		this.addEventListener(Event.ENTER_FRAME, function() {
+			if (core.frame % 5 == 0){
+				this.remove();
+			}
+		});
+	}
+});
+
+// 左右の林の背景
+var BgForestLeftRight = enchant.Class.create(enchant.Sprite, {
+	initialize: function(x, y, imagePath, leftRightLFlg) {
+		// 画像の大きさ
+		enchant.Sprite.call(this, 1000, 120);
+		this.image = core.assets[imagePath];
+
+		// 表示位置
+		this.x = x;
+		// this.x = -420;
+		this.y = y;
+		this.scale(0.15, 0.15);
+
+		var moveToX = 535;
+		var moveToY = y + 50;
+		// var moveSpeed = 5000;
+		var moveSpeed = 4000;
+
+		if (leftRightLFlg) {
+			moveToX = x + (moveToX * -1);
+		} else {
+			moveToX = x + (moveToX * 1);
+		}
+
+		// this.scale(scaleX_before, scaleY_before);
+		this.tl.scaleTo(1.2, 1.2, moveSpeed);
+		this.tl.and();
+		// this.tl.moveTo(moveToX, y + 50, 5000);
+		this.tl.moveTo(moveToX, moveToY, moveSpeed);
+	}
+});
+
+// 左右の林の背景
+var BgForestPre = enchant.Class.create(enchant.Sprite, {
+	initialize: function(x, y, imagePath) {
+		// 画像の大きさ
+		enchant.Sprite.call(this, 1000, 120);
+		this.image = core.assets[imagePath];
+
+		// 表示位置
+		this.x = x;
+		this.y = y;
+		this.scale(0.16, 0.16);
 	}
 });
